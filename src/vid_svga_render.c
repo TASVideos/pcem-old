@@ -40,7 +40,8 @@ void svga_render_text_40(svga_t *svga)
         
         if (svga->fullchange)
         {
-                uint32_t *p = &((uint32_t *)buffer32->line[svga->displine])[32];
+                int offset = ((8 - svga->scrollcache) << 1) + 16;
+                uint32_t *p = &((uint32_t *)buffer32->line[svga->displine])[offset];
                 int x, xx;
                 int drawcursor;
                 uint8_t chr, attr, dat;
@@ -103,7 +104,8 @@ void svga_render_text_80(svga_t *svga)
         
         if (svga->fullchange)
         {
-                uint32_t *p = &((uint32_t *)buffer32->line[svga->displine])[32];
+                int offset = (8 - svga->scrollcache) + 24;
+                uint32_t *p = &((uint32_t *)buffer32->line[svga->displine])[offset];
                 int x, xx;
                 int drawcursor;
                 uint8_t chr, attr, dat;
@@ -166,7 +168,8 @@ void svga_render_text_80_ksc5601(svga_t *svga)
         
         if (svga->fullchange)
         {
-                uint32_t *p = &((uint32_t *)buffer32->line[svga->displine])[32];
+                int offset = (8 - svga->scrollcache) + 24;
+                uint32_t *p = &((uint32_t *)buffer32->line[svga->displine])[offset];
                 int x, xx;
                 int drawcursor;
                 uint8_t chr, attr, dat, nextchr;
@@ -198,12 +201,14 @@ void svga_render_text_80_ksc5601(svga_t *svga)
                                 }
                         }
 
-                        if(x + xinc < svga->hdisp && (chr & nextchr & 0x80))
+                        if(x + xinc < svga->hdisp && (chr & (nextchr | svga->ksc5601_sbyte_mask) & 0x80))
                         {
                                 if((chr == 0xc9 || chr == 0xfe) && (nextchr > 0xa0 && nextchr < 0xff))
                                         dat = fontdatksc5601_user[(chr == 0xfe ? 96 : 0) + (nextchr & 0x7F) - 0x20][svga->sc];
-                                else
+                                else if(nextchr & 0x80)
                                         dat = fontdatksc5601[((chr & 0x7F) << 7) | (nextchr & 0x7F)][svga->sc];
+                                else
+                                        dat = 0xFF;
                         }
                         else
                         {
@@ -229,7 +234,7 @@ void svga_render_text_80_ksc5601(svga_t *svga)
                         svga->ma += 4; 
                         p += xinc;
 
-                        if(x + xinc < svga->hdisp && (chr & nextchr & 0x80))
+                        if(x + xinc < svga->hdisp && (chr & (nextchr | svga->ksc5601_sbyte_mask) & 0x80))
                         {
                                 attr = svga->vram[((svga->ma << 1) + 1) & svga->vram_display_mask];
 
@@ -252,8 +257,10 @@ void svga_render_text_80_ksc5601(svga_t *svga)
 
                                 if((chr == 0xc9 || chr == 0xfe) && (nextchr > 0xa0 && nextchr < 0xff))
                                         dat = fontdatksc5601_user[(chr == 0xfe ? 96 : 0) + (nextchr & 0x7F) - 0x20][svga->sc + 16];
-                                else
+                                else if(nextchr & 0x80)
                                         dat = fontdatksc5601[((chr & 0x7F) << 7) | (nextchr & 0x7F)][svga->sc + 16];
+                                else
+                                        dat = 0xFF;
                                 if (svga->seqregs[1] & 1) 
                                 { 
                                         for (xx = 0; xx < 8; xx++) 

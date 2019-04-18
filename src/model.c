@@ -5,6 +5,8 @@
 #include "mouse.h"
 
 #include "acc2036.h"
+#include "acc2168.h"
+#include "acc3221.h"
 #include "acer386sx.h"
 #include "ali1429.h"
 #include "amstrad.h"
@@ -13,12 +15,14 @@
 #include "compaq.h"
 #include "dells200.h"
 #include "device.h"
+#include "cassette.h"
 #include "dma.h"
 #include "fdc.h"
 #include "fdc37c665.h"
 #include "gameport.h"
 #include "headland.h"
 #include "i430fx.h"
+#include "i430hx.h"
 #include "i430lx.h"
 #include "i430vx.h"
 #include "ide.h"
@@ -67,6 +71,7 @@
 #include "w83877tf.h"
 #include "wd76c10.h"
 #include "xi8088.h"
+#include "zenith.h"
 
 void             xt_init();
 void           pcjr_init();
@@ -97,19 +102,24 @@ void     at_ali1429_init();
 void    at_headland_init();
 void     at_opti495_init();
 void      at_sis496_init();
+void       at_p55va_init();
+void     at_p55tvp4_init();
 void      at_i430vx_init();
 void      at_batman_init();
 void    at_endeavor_init();
+void     at_p55t2p4_init();
 void     xt_laserxt_init();
 void      at_t3100e_init();
 void       xt_t1000_init();
 void       xt_t1200_init();
 void    at_sl82c460_init();
 void       at_zappa_init();
+void      at_pb410a_init();
 void      at_pb520r_init();
 void       at_pb570_init();
 void     compaq_pip_init();
 void      xt_xi8088_init();
+void      xt_zenith_init();
 void        at_mvp3_init();
 int model;
 
@@ -134,12 +144,14 @@ MODEL models[] =
         {"[8088] Thomson TO16 PC",        ROM_TO16_PC,          "to16_pc",        { {"",      cpus_8088},        {"",    NULL},         {"",      NULL}},        MODEL_GFX_NONE,                                                  512,  640, 128,             xt_init, NULL},
         {"[8088] Toshiba T1000",          ROM_T1000,            "t1000",          { {"",      cpus_8088},        {"",    NULL},         {"",      NULL}},        MODEL_GFX_FIXED,                                                 512, 1280, 768,       xt_t1000_init, &t1000_device},
         {"[8088] VTech Laser Turbo XT",   ROM_LTXT,             "ltxt",           { {"",      cpus_8088},        {"",    NULL},         {"",      NULL}},        MODEL_GFX_NONE,                                                   64, 1152,  64,     xt_laserxt_init, NULL},
+        {"[8088] Zenith Data SupersPort", ROM_ZD_SUPERS,        "zdsupers",       { {"",      cpus_8088},        {"",    NULL},         {"",      NULL}},        MODEL_GFX_NONE,                                                  128,  640, 128,      xt_zenith_init, NULL},
         {"[8088] Xi8088",                 ROM_XI8088,           "xi8088",         { {"",      cpus_8088},        {"",    NULL},         {"",      NULL}},        MODEL_GFX_NONE|MODEL_AT|MODEL_PS2,                                64, 1024, 128,      xt_xi8088_init, &xi8088_device},
 
         {"[8086] Amstrad PC1512",         ROM_PC1512,           "pc1512",         { {"",      cpus_pc1512},      {"",    NULL},         {"",      NULL}},        MODEL_GFX_FIXED|MODEL_AMSTRAD,                                   512,  640, 128,            ams_init, NULL},
         {"[8086] Amstrad PC1640",         ROM_PC1640,           "pc1640",         { {"",      cpus_8086},        {"",    NULL},         {"",      NULL}},        MODEL_GFX_DISABLE_HW|MODEL_AMSTRAD,                              640,  640,   0,            ams_init, NULL},
         {"[8086] Amstrad PC2086",         ROM_PC2086,           "pc2086",         { {"",      cpus_8086},        {"",    NULL},         {"",      NULL}},        MODEL_GFX_DISABLE_HW|MODEL_AMSTRAD,                              640,  640,   0,            ams_init, NULL},
         {"[8086] Amstrad PC3086",         ROM_PC3086,           "pc3086",         { {"",      cpus_8086},        {"",    NULL},         {"",      NULL}},        MODEL_GFX_DISABLE_HW|MODEL_AMSTRAD,                              640,  640,   0,            ams_init, NULL},
+        {"[8086] Amstrad PPC512/640",     ROM_PPC512,            "ppc512",        { {"",      cpus_8086},        {"",    NULL},         {"",      NULL}},        MODEL_GFX_DISABLE_HW|MODEL_AMSTRAD,                              512,  640, 128,            ams_init, NULL},
         {"[8086] Olivetti M24",           ROM_OLIM24,           "olivetti_m24",   { {"",      cpus_8086},        {"",    NULL},         {"",      NULL}},        MODEL_GFX_FIXED|MODEL_OLIM24,                                    128,  640, 128,         olim24_init, NULL},
         {"[8086] Sinclair PC200",         ROM_PC200,            "pc200",          { {"",      cpus_8086},        {"",    NULL},         {"",      NULL}},        MODEL_GFX_DISABLE_HW|MODEL_AMSTRAD,                              512,  640, 128,            ams_init, NULL},
         {"[8086] Tandy 1000 SL/2",        ROM_TANDY1000SL2,     "tandy1000sl2",   { {"",      cpus_8086},        {"",    NULL},         {"",      NULL}},        MODEL_GFX_FIXED,                                                 512,  768, 128,     tandy1ksl2_init, NULL},
@@ -162,8 +174,11 @@ MODEL models[] =
         {"[286] Samsung SPC-4200P",       ROM_SPC4200P,         "spc4200p",       { {"",      cpus_286},         {"",    NULL},         {"",      NULL}},        MODEL_GFX_NONE|MODEL_AT|MODEL_PS2|MODEL_HAS_IDE,                 512, 2048, 128,        at_scat_init, NULL},
         {"[286] Samsung SPC-4216P",       ROM_SPC4216P,         "spc4216p",       { {"",      cpus_286},         {"",    NULL},         {"",      NULL}},        MODEL_GFX_NONE|MODEL_AT|MODEL_PS2|MODEL_HAS_IDE,                   1,    5,   1,        at_scat_init, NULL},
         {"[286] Toshiba T3100e",          ROM_T3100E,           "t3100e",         { {"",      cpus_286},         {"",    NULL},         {"",      NULL}},        MODEL_GFX_FIXED|MODEL_AT|MODEL_HAS_IDE,                         1024, 5120, 256,      at_t3100e_init, NULL},
+        {"[286] Trigem 286M",             ROM_TG286M,           "tg286m",         { {"",      cpus_286},         {"",    NULL},         {"",      NULL}},        MODEL_GFX_NONE|MODEL_AT|MODEL_HAS_IDE,                           512, 8192, 128,        at_headland_init, NULL},
+        {"[286] Tulip AT Compact",        ROM_TULIP_TC7, 	"tulip_tc7",      { {"",      cpus_286},         {"",    NULL},         {"",      NULL}},        MODEL_GFX_NONE|MODEL_AT|MODEL_HAS_IDE,                     	  640,15872, 128,         ibm_at_init, NULL},
         
         {"[386SX] Acer 386SX25/N",        ROM_ACER386,          "acer386",        { {"Intel", cpus_acer},        {"",    NULL},         {"",      NULL}},        MODEL_GFX_DISABLE_SW|MODEL_AT|MODEL_PS2|MODEL_HAS_IDE,             1,   16,   1,   at_acer386sx_init, NULL},
+        {"[386SX] AMA-932J",              ROM_AMA932J,          "ama932j",        { {"Intel", cpus_i386SX},      {"AMD", cpus_Am386SX}, {"Cyrix", cpus_486SLC}}, MODEL_GFX_FIXED|MODEL_AT|MODEL_HAS_IDE,                          512, 8192, 128,    at_headland_init, NULL},
         {"[386SX] AMI 386SX clone",       ROM_AMI386SX,         "ami386",         { {"Intel", cpus_i386SX},      {"AMD", cpus_Am386SX}, {"Cyrix", cpus_486SLC}}, MODEL_GFX_NONE|MODEL_AT|MODEL_HAS_IDE,                           512,16384, 128,    at_headland_init, NULL},
         {"[386SX] Amstrad MegaPC",        ROM_MEGAPC,           "megapc",         { {"Intel", cpus_i386SX},      {"AMD", cpus_Am386SX}, {"Cyrix", cpus_486SLC}}, MODEL_GFX_DISABLE_HW|MODEL_AT|MODEL_PS2|MODEL_HAS_IDE,             1,   16,   1,     at_wd76c10_init, NULL},
         {"[386SX] DTK 386SX clone",       ROM_DTK386,           "dtk386",         { {"Intel", cpus_i386SX},      {"AMD", cpus_Am386SX}, {"Cyrix", cpus_486SLC}}, MODEL_GFX_NONE|MODEL_AT|MODEL_HAS_IDE,                           512,16384, 128,        at_neat_init, NULL},
@@ -184,6 +199,7 @@ MODEL models[] =
         {"[486] Award SiS 496/497",       ROM_SIS496,           "sis496",         { {"Intel", cpus_i486},        {"AMD", cpus_Am486},   {"Cyrix", cpus_Cx486}},  MODEL_GFX_NONE|MODEL_AT|MODEL_PCI|MODEL_HAS_IDE,                   1,  256,   1,      at_sis496_init, NULL},
         {"[486] Elonex PC-425X",          ROM_ELX_PC425X,       "elx_pc425x",     { {"Intel", cpus_i486},        {"AMD", cpus_Am486},   {"Cyrix", cpus_Cx486}},  MODEL_GFX_FIXED|MODEL_AT|MODEL_HAS_IDE,                            1,  256,   1,    at_sl82c460_init, NULL},
         {"[486] IBM PS/2 Model 70 (type 4)",   ROM_IBMPS2_M70_TYPE4, "ibmps2_m70_type4", { {"Intel", cpus_i486},        {"AMD", cpus_Am486},   {"Cyrix", cpus_Cx486}},  MODEL_GFX_FIXED|MODEL_AT|MODEL_PS2|MODEL_MCA,               2,   16,   2,   ps2_model_70_init, NULL},
+        {"[486] Packard Bell PB410A",     ROM_PB410A,           "pb410a",         { {"Intel", cpus_i486},        {"AMD", cpus_Am486},   {"Cyrix", cpus_Cx486}},  MODEL_GFX_DISABLE_SW|MODEL_AT|MODEL_PS2|MODEL_HAS_IDE,             1,   64,   1,      at_pb410a_init, NULL},
         
         {"[Socket 4] Intel Premiere/PCI", ROM_REVENGE,          "revenge",        { {"Intel", cpus_Pentium5V},   {"",    NULL},         {"",      NULL}},        MODEL_GFX_NONE|MODEL_AT|MODEL_PCI|MODEL_PS2|MODEL_HAS_IDE,         1,  128,   1,      at_batman_init, NULL},
         {"[Socket 4] Packard Bell PB520R",ROM_PB520R,           "pb520r",         { {"Intel", cpus_Pentium5V},   {"",    NULL},         {"",      NULL}},        MODEL_GFX_DISABLE_SW|MODEL_AT|MODEL_PCI|MODEL_PS2|MODEL_HAS_IDE,   1,  128,   1,      at_pb520r_init, NULL},
@@ -192,7 +208,10 @@ MODEL models[] =
         {"[Socket 5] Intel Advanced/ZP",  ROM_ZAPPA,            "zappa",          { {"Intel", cpus_PentiumS5},   {"IDT", cpus_WinChip}, {"Cyrix", cpus_6x86}},   MODEL_GFX_NONE|MODEL_AT|MODEL_PCI|MODEL_PS2|MODEL_HAS_IDE,         1,  128,   1,       at_zappa_init, NULL},
         {"[Socket 5] Packard Bell PB570", ROM_PB570,            "pb570",          { {"Intel", cpus_PentiumS5},   {"IDT", cpus_WinChip}, {"Cyrix", cpus_6x86}},   MODEL_GFX_DISABLE_SW|MODEL_AT|MODEL_PCI|MODEL_PS2|MODEL_HAS_IDE,   1,  128,   1,       at_pb570_init, NULL},
 
-        {"[Socket 7] Award 430VX PCI",    ROM_430VX,            "430vx",          { {"Intel", cpus_Pentium},     {"AMD", cpus_K6_S7},   {"IDT", cpus_WinChip}, {"Cyrix", cpus_6x86}},   MODEL_GFX_NONE|MODEL_AT|MODEL_PCI|MODEL_PS2|MODEL_HAS_IDE,         1,  128,   1,      at_i430vx_init, NULL},
+        {"[Socket 7] ASUS P/I-P55TVP4",   ROM_P55TVP4,          "p55tvp4",        { {"Intel", cpus_Pentium},     {"IDT", cpus_WinChip}, {"Cyrix", cpus_6x86}},   MODEL_GFX_NONE|MODEL_AT|MODEL_PCI|MODEL_PS2|MODEL_HAS_IDE,         1,  256,   1,      at_p55tvp4_init, NULL},
+        {"[Socket 7] ASUS P/I-P55T2P4",   ROM_P55T2P4,          "p55t2p4",        { {"Intel", cpus_Pentium},     {"IDT", cpus_WinChip}, {"Cyrix", cpus_6x86}},   MODEL_GFX_NONE|MODEL_AT|MODEL_PCI|MODEL_PS2|MODEL_HAS_IDE,         1,  512,   1,      at_p55t2p4_init, NULL},
+        {"[Socket 7] Award 430VX PCI",    ROM_430VX,            "430vx",          { {"Intel", cpus_Pentium},     {"IDT", cpus_WinChip}, {"Cyrix", cpus_6x86}},   MODEL_GFX_NONE|MODEL_AT|MODEL_PCI|MODEL_PS2|MODEL_HAS_IDE,         1,  256,   1,      at_i430vx_init, NULL},
+        {"[Socket 7] Epox P55-VA",        ROM_P55VA,            "p55va",          { {"Intel", cpus_Pentium},     {"IDT", cpus_WinChip}, {"Cyrix", cpus_6x86}},   MODEL_GFX_NONE|MODEL_AT|MODEL_PCI|MODEL_PS2|MODEL_HAS_IDE,         1,  256,   1,      at_p55va_init, NULL},
 
         {"[Super 7] FIC VA-503+",         ROM_FIC_VA503P,       "fic_va503p",     { {"Intel", cpus_Pentium},     {"AMD", cpus_K6_SS7},  {"IDT", cpus_WinChip_SS7}, {"Cyrix", cpus_6x86}},   MODEL_GFX_NONE|MODEL_AT|MODEL_PCI|MODEL_PS2|MODEL_HAS_IDE,     1,  512,   1,        at_mvp3_init, NULL},
         
@@ -205,6 +224,11 @@ int model_count()
 }
 
 int model_getromset()
+{
+        return models[model].id;
+}
+
+int model_getromset_from_model(int model)
 {
         return models[model].id;
 }
@@ -285,6 +309,8 @@ void xt_init()
         keyboard_xt_init();
 	nmi_init();
         device_add(&gameport_device);
+	if (romset == ROM_IBMPC)
+		device_add(&cassette_device);
 }
 
 void compaq_pip_init()
@@ -306,6 +332,7 @@ void pcjr_init()
         keyboard_pcjr_init();
         device_add(&sn76489_device);
 	nmi_mask = 0x80;
+	device_add(&cassette_device);
 }
 
 void tandy1k_init()
@@ -375,6 +402,22 @@ void xt_laserxt_init()
 {
         xt_init();
         laserxt_init();
+}
+
+void xt_zenith_init() /* [8088] Zenith Data Systems SupersPort */
+{
+        dma_init();
+        fdc_add();
+        lpt_init();
+        lpt2_remove(); /* only one parallel port */
+        pic_init();
+        pit_init();
+        serial1_init(0x3f8, 4); /* only one serial port */
+        mem_add_bios();
+        device_add(&zenith_scratchpad_device);
+        pit_set_out_func(&pit, 1, pit_refresh_timer_xt);
+        keyboard_xt_init();
+        nmi_init();
 }
 
 void xt_xi8088_init()
@@ -569,6 +612,14 @@ void pb_l300sx_init()
         acc2036_init();
 }
 
+void at_pb410a_init()
+{
+        at_init();
+        acc2168_init();
+        acc3221_init();
+}
+
+
 void at_sis496_init()
 {
         at_init();
@@ -652,6 +703,34 @@ void at_zappa_init()
         device_add(&intel_flash_bxt_ami_device);
 }
 
+void at_p55va_init()
+{
+        at_init();
+        pci_init(PCI_CONFIG_TYPE_1);
+        pci_slot(0x08);
+        pci_slot(0x09);
+        pci_slot(0x0A);
+        pci_slot(0x0B);
+        i430vx_init();
+        piix_init(7, 0x08, 0x09, 0x0A, 0x0B);
+        um8669f_init();
+        device_add(&intel_flash_bxt_device);
+}
+
+void at_p55tvp4_init()
+{
+        at_init();
+        pci_init(PCI_CONFIG_TYPE_1);
+        pci_slot(0x0C);
+        pci_slot(0x0B);
+        pci_slot(0x0A);
+        pci_slot(0x09);
+        i430vx_init();
+        piix_init(7, 0x0C, 0x0B, 0x0A, 0x09);
+        um8669f_init();
+        device_add(&intel_flash_bxt_device);
+}
+
 void at_i430vx_init()
 {
         at_init();
@@ -662,6 +741,20 @@ void at_i430vx_init()
         pci_slot(0x14);
         i430vx_init();
         piix_init(7, 18, 17, 20, 19);
+        um8669f_init();
+        device_add(&intel_flash_bxt_device);
+}
+
+void at_p55t2p4_init()
+{
+        at_init();
+        pci_init(PCI_CONFIG_TYPE_1);
+        pci_slot(0x0C);
+        pci_slot(0x0B);
+        pci_slot(0x0A);
+        pci_slot(0x09);
+        i430hx_init();
+        piix_init(7, 0x0C, 0x0B, 0x0A, 0x09);
         um8669f_init();
         device_add(&intel_flash_bxt_device);
 }

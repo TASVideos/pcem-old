@@ -104,7 +104,7 @@ void pclog(const char *format, ...)
         vsprintf(buf, format, ap);
         va_end(ap);
         fputs(buf,pclogf);
-        //fflush(pclogf);
+        fflush(pclogf);
 #endif
 }
 
@@ -412,9 +412,9 @@ void resetpchard()
         disc_load(0, discfns[0]);
         disc_load(1, discfns[1]);
 
-        model_init();
-        if (!AT)
+        if (!AT && models[model].max_ram > 640 && models[model].max_ram <= 768 && !video_is_ega_vga())
                 mem_set_704kb();
+        model_init();
         mouse_emu_init();
         video_init();
         speaker_init();

@@ -194,6 +194,7 @@ enum
         ROM_IBMAT,
         ROM_CMDPC30,
         ROM_AMI286,
+        ROM_TG286M,
         ROM_AWARD286,
         ROM_GW286CT,
         ROM_SPC4200P,
@@ -204,11 +205,14 @@ enum
         ROM_ACER386,
         ROM_KMXC02,
         ROM_MEGAPC,
+        ROM_AMA932J,
         ROM_AMI386SX,
         ROM_AMI486,
         ROM_WIN486,
         ROM_PCI486,
         ROM_SIS496,
+        ROM_P55VA,   /* Epox P55-VA/430VX/Award/SMC FDC37C932FR*/
+        ROM_P55TVP4, /* ASUS P/I-P55TVP4/430VX/Award/Winbond W8387F*/
         ROM_430VX,
         ROM_ENDEAVOR,
         ROM_REVENGE,
@@ -217,6 +221,7 @@ enum
         ROM_IBMPS1_2121,
         ROM_AMI386DX_OPTI495,
         ROM_MR386DX_OPTI495,
+        ROM_P55T2P4, /* ASUS P/I-P55T2P4/430HX/Award/Winbond W8387F*/
 	ROM_IBMPS2_M30_286,
 	ROM_IBMPS2_M50,
 	ROM_IBMPS2_M55SX,
@@ -241,8 +246,12 @@ enum
 	ROM_XI8088,
 	ROM_IBMPS2_M70_TYPE3,
 	ROM_IBMPS2_M70_TYPE4,
+	ROM_TULIP_TC7,
+	ROM_ZD_SUPERS,   /* [8088] Zenith Data Systems SupersPort */
+	ROM_PB410A,
+        ROM_PPC512,
 	ROM_FIC_VA503P,
-                	
+	
         ROM_MAX
 };
 
@@ -260,6 +269,7 @@ enum
         GFX_EGA,        /*Using IBM EGA BIOS*/
         GFX_TVGA,       /*Using Trident TVGA8900D BIOS*/
         GFX_ET4000,     /*Tseng ET4000*/
+        GFX_TGKOREANVGA, /*Trigem Korean VGA(Tseng ET4000AX)*/
         GFX_ET4000W32,  /*Tseng ET4000/W32p (Diamond Stealth 32)*/
         GFX_BAHAMAS64,  /*S3 Vision864 (Paradise Bahamas 64)*/
         GFX_N9_9FX,     /*S3 764/Trio64 (Number Nine 9FX)*/
@@ -286,6 +296,7 @@ enum
         GFX_CL_GD5434,  /*Cirrus Logic CL-GD5434*/
         GFX_OTI037,     /*Oak OTI-037*/
         GFX_COMPAQ_CGA,	/*Compaq CGA*/
+	GFX_SIGMA400,	/*Sigma Designs Color 400 */
         GFX_MAX
 };
 

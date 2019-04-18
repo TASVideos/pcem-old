@@ -53,6 +53,8 @@ void svga_out(uint16_t addr, uint8_t val, void *p)
                 }
                 else
                 {
+                        if ((svga->attraddr == 0x13) && (svga->attrregs[0x13] != val))
+                                svga->fullchange = changeframecount;
                         svga->attrregs[svga->attraddr & 31] = val;
                         if (svga->attraddr < 16) 
                                 svga->fullchange = changeframecount;
@@ -587,6 +589,7 @@ void svga_poll(void *p)
                 {
 //                        pclog("VC split\n");
                         svga->ma = svga->maback = 0;
+                        svga->sc = 0;
                         if (svga->attrregs[0x10] & 0x20) 
                                 svga->scrollcache = 0;
                 }
