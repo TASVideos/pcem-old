@@ -71,6 +71,8 @@ typedef struct gd5429_t
         uint32_t lfb_base;
         
         int mmio_vram_overlap;
+        
+        uint8_t sr10_read, sr11_read;
 } gd5429_t;
 
 static void gd5429_mmio_write(uint32_t addr, uint8_t val, void *p);
@@ -111,21 +113,30 @@ void gd5429_out(uint16_t addr, uint8_t val, void *p)
                                 case 0x10: case 0x30: case 0x50: case 0x70:
                                 case 0x90: case 0xb0: case 0xd0: case 0xf0:
                                 svga->hwcursor.x = (val << 3) | ((svga->seqaddr >> 5) & 7);
+                                gd5429->sr10_read = svga->seqaddr & 0xe0;
 //                                pclog("svga->hwcursor.x = %i\n", svga->hwcursor.x);
                                 break;
                                 case 0x11: case 0x31: case 0x51: case 0x71:
                                 case 0x91: case 0xb1: case 0xd1: case 0xf1:
                                 svga->hwcursor.y = (val << 3) | ((svga->seqaddr >> 5) & 7);
+                                gd5429->sr11_read = svga->seqaddr & 0xe0;
 //                                pclog("svga->hwcursor.y = %i\n", svga->hwcursor.y);
                                 break;
                                 case 0x12:
                                 svga->hwcursor.ena = val & 1;
                                 svga->hwcursor.ysize = (val & 4) ? 64 : 32;
                                 svga->hwcursor.yoff = 0;
+                                if (svga->hwcursor.ysize == 64)
+                                        svga->hwcursor.addr = (0x3fc000 + ((svga->seqregs[0x13] & 0x3c) * 256)) & svga->vram_mask;
+                                else
+                                        svga->hwcursor.addr = (0x3fc000 + ((svga->seqregs[0x13] & 0x3f) * 256)) & svga->vram_mask;
 //                                pclog("svga->hwcursor.ena = %i\n", svga->hwcursor.ena);
                                 break;                               
                                 case 0x13:
-                                svga->hwcursor.addr = (0x3fc000 + ((val & 0x3f) * 256)) & svga->vram_mask;
+                                if (svga->hwcursor.ysize == 64)
+                                        svga->hwcursor.addr = (0x3fc000 + ((val & 0x3c) * 256)) & svga->vram_mask;
+                                else
+                                        svga->hwcursor.addr = (0x3fc000 + ((val & 0x3f) * 256)) & svga->vram_mask;
 //                                pclog("svga->hwcursor.addr = %x\n", svga->hwcursor.addr);
                                 break;                                
                                 
@@ -150,7 +161,10 @@ void gd5429_out(uint16_t addr, uint8_t val, void *p)
                 }
                 gd5429->dac_3c6_count = 0;
                 break;
-                
+                case 0x3c7: case 0x3c8: case 0x3c9:
+                gd5429->dac_3c6_count = 0;
+                break;
+
                 case 0x3cf:
 //                pclog("Write GDC %02x %02x\n", svga->gdcaddr, val);
                 if (svga->gdcaddr == 0)
@@ -311,6 +325,13 @@ uint8_t gd5429_in(uint16_t addr, void *p)
         
         switch (addr)
         {
+                case 0x3c4:
+                if ((svga->seqaddr & 0x1f) == 0x10)
+                        return (svga->seqaddr & 0x1f) | gd5429->sr10_read;
+                if ((svga->seqaddr & 0x1f) == 0x11)
+                        return (svga->seqaddr & 0x1f) | gd5429->sr11_read;
+                return svga->seqaddr & 0x1f;
+                
                 case 0x3c5:
                 if (svga->seqaddr > 5)
                 {
@@ -322,7 +343,7 @@ uint8_t gd5429_in(uint16_t addr, void *p)
                                 return ((svga->seqregs[6] & 0x17) == 0x12) ? 0x12 : 0x0f;
 
                                 case 0x17:
-                                temp = svga->gdcreg[0x17];
+                                temp = svga->seqregs[0x17];
                                 temp &= ~(7 << 3);
                                 if (gd5429->type == CL_TYPE_GD5429)
                                 {
@@ -354,6 +375,9 @@ uint8_t gd5429_in(uint16_t addr, void *p)
                         return gd5429->hidden_dac_reg;
                 }
                 gd5429->dac_3c6_count++;
+                break;
+                case 0x3c7: case 0x3c8: case 0x3c9:
+                gd5429->dac_3c6_count = 0;
                 break;
 
                 case 0x3cf:
@@ -413,7 +437,7 @@ void gd5429_recalc_mapping(gd5429_t *gd5429)
 {
         svga_t *svga = &gd5429->svga;
         
-        if (PCI && !(gd5429->pci_regs[PCI_REG_COMMAND] & PCI_COMMAND_MEM))
+        if (PCI && gd5429->type >= CL_TYPE_GD5430 && !(gd5429->pci_regs[PCI_REG_COMMAND] & PCI_COMMAND_MEM))
         {
                 mem_mapping_disable(&svga->mapping);
                 mem_mapping_disable(&gd5429->linear_mapping);
@@ -566,33 +590,61 @@ void gd5429_hwcursor_draw(svga_t *svga, int displine)
         uint8_t dat[2];
         int xx;
         int offset = svga->hwcursor_latch.x - svga->hwcursor_latch.xoff;
+        int line_offset = (svga->seqregs[0x12] & 0x04) ? 16 : 4;
 
         if (svga->interlace && svga->hwcursor_oddeven)
-                svga->hwcursor_latch.addr += 4;
+                svga->hwcursor_latch.addr += line_offset;
 
-        for (x = 0; x < 32; x += 8)
+        if (svga->seqregs[0x12] & 0x04)
         {
-                dat[0] = svga->vram[svga->hwcursor_latch.addr];
-                dat[1] = svga->vram[svga->hwcursor_latch.addr + 0x80];
-                for (xx = 0; xx < 8; xx++)
+                for (x = 0; x < 64; x += 8)
                 {
-                        if (offset >= svga->hwcursor_latch.x)
+                        dat[0] = svga->vram[svga->hwcursor_latch.addr];
+                        dat[1] = svga->vram[svga->hwcursor_latch.addr + 8];
+                        for (xx = 0; xx < 8; xx++)
                         {
-                                if (dat[1] & 0x80)
-                                        ((uint32_t *)buffer32->line[displine])[offset + 32] = 0;
-                                if (dat[0] & 0x80)
-                                        ((uint32_t *)buffer32->line[displine])[offset + 32] ^= 0xffffff;
+                                if (offset >= svga->hwcursor_latch.x)
+                                {
+                                        if (dat[1] & 0x80)
+                                                ((uint32_t *)buffer32->line[displine])[offset + 32] = 0;
+                                        if (dat[0] & 0x80)
+                                                ((uint32_t *)buffer32->line[displine])[offset + 32] ^= 0xffffff;
+                                }
+
+                                offset++;
+                                dat[0] <<= 1;
+                                dat[1] <<= 1;
                         }
-                           
-                        offset++;
-                        dat[0] <<= 1;
-                        dat[1] <<= 1;
+                        svga->hwcursor_latch.addr++;
                 }
-                svga->hwcursor_latch.addr++;
+                svga->hwcursor_latch.addr += 8;
+        }
+        else
+        {
+                for (x = 0; x < 32; x += 8)
+                {
+                        dat[0] = svga->vram[svga->hwcursor_latch.addr];
+                        dat[1] = svga->vram[svga->hwcursor_latch.addr + 0x80];
+                        for (xx = 0; xx < 8; xx++)
+                        {
+                                if (offset >= svga->hwcursor_latch.x)
+                                {
+                                        if (dat[1] & 0x80)
+                                                ((uint32_t *)buffer32->line[displine])[offset + 32] = 0;
+                                        if (dat[0] & 0x80)
+                                                ((uint32_t *)buffer32->line[displine])[offset + 32] ^= 0xffffff;
+                                }
+
+                                offset++;
+                                dat[0] <<= 1;
+                                dat[1] <<= 1;
+                        }
+                        svga->hwcursor_latch.addr++;
+                }
         }
 
         if (svga->interlace && !svga->hwcursor_oddeven)
-                svga->hwcursor_latch.addr += 4;
+                svga->hwcursor_latch.addr += line_offset;
 }
 
 

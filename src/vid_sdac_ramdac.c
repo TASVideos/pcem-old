@@ -9,14 +9,31 @@ static void sdac_control_write(sdac_ramdac_t *ramdac, svga_t *svga, uint8_t val)
 {
         ramdac->command = val;
 //        pclog("RAMDAC command reg now %02X\n", val);
-        switch (val >> 4)
+        switch (val & 0xf0)
         {
-                case 0x2: case 0x3: case 0xa: svga->bpp = 15; break;
-                case 0x4: case 0xe:           svga->bpp = 24; break;
-                case 0x5: case 0x6: case 0xc: svga->bpp = 16; break;
-                case 0x7:                     svga->bpp = 32; break;
-
-                case 0: case 1: default: svga->bpp = 8; break;
+                case 0x00: case 0x10:
+                svga->bpp = 8;
+                break;
+                
+                case 0x20: case 0x30: case 0x80: case 0xa0:
+                svga->bpp = 15;
+                break;
+                
+                case 0x50: case 0x60: case 0xc0:
+                svga->bpp = 16;
+                break;
+                
+                case 0x40: case 0x90: case 0xe0:
+                svga->bpp = 24;
+                break;
+                
+                case 0x70:
+                svga->bpp = 32;
+                break;
+                
+                default:
+                svga->bpp = 8;
+                break;
         }
 }
 
@@ -96,7 +113,6 @@ void sdac_ramdac_out(uint16_t addr, uint8_t val, sdac_ramdac_t *ramdac, svga_t *
 
 uint8_t sdac_ramdac_in(uint16_t addr, sdac_ramdac_t *ramdac, svga_t *svga)
 {
-        uint8_t temp;
 //        /*if (CS!=0xC000) */pclog("IN RAMDAC %04X %04X:%04X %i  %i %i\n",addr,CS,cpu_state.pc, ramdac->rs2, ramdac->rindex, ramdac->windex);
         switch (addr)
         {
@@ -105,15 +121,15 @@ uint8_t sdac_ramdac_in(uint16_t addr, sdac_ramdac_t *ramdac, svga_t *svga)
                         ramdac->magic_count++;
                 if (ramdac->magic_count == 4)
                 {
-                        temp = 0x70; /*SDAC ID*/
                         ramdac->rs2 = 1;
+                        return 0x70; /*SDAC ID*/
                 }
                 if (ramdac->magic_count == 5)
                 {
-                        temp = ramdac->command;
                         ramdac->magic_count = 0;
+                        return ramdac->command;
                 }
-                return temp;
+                break;
                 case 3:
                 ramdac->magic_count=0;
                 break;
@@ -148,10 +164,14 @@ float sdac_getclock(int clock, void *p)
         sdac_ramdac_t *ramdac = (sdac_ramdac_t *)p;
         float t;
         int m, n1, n2;
+        
+        if (ramdac->regs[0xe] & (1 << 5))
+                clock = ramdac->regs[0xe] & 7;
+                
 //        pclog("SDAC_Getclock %i %04X\n", clock, ramdac->regs[clock]);
+        clock &= 7;
         if (clock == 0) return 25175000.0;
         if (clock == 1) return 28322000.0;
-        clock ^= 1; /*Clocks 2 and 3 seem to be reversed*/
         m  =  (ramdac->regs[clock] & 0x7f) + 2;
         n1 = ((ramdac->regs[clock] >>  8) & 0x1f) + 2;
         n2 = ((ramdac->regs[clock] >> 13) & 0x07);

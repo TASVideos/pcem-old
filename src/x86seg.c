@@ -455,13 +455,13 @@ int loadseg(uint16_t seg, x86seg *s)
                 s->access = (3 << 5) | 2;
                 s->base = seg << 4;
                 s->seg = seg;
-                if (s == &cpu_state.seg_ss)
-                        set_stack32(0);
                 s->checked = 1;
                 if (s == &cpu_state.seg_ds)
                         codegen_flat_ds = 0;
                 if (s == &cpu_state.seg_ss)
                         codegen_flat_ss = 0;
+                if (s == &cpu_state.seg_ss && (cpu_state.eflags & VM_FLAG))
+                        set_stack32(0);
         }
         
         if (s == &cpu_state.seg_ds)
@@ -1124,6 +1124,7 @@ void loadcscall(uint16_t seg, uint32_t old_pc)
                                         case 0x1800: case 0x1900: case 0x1A00: case 0x1B00: /*Non-conforming code*/
                                         if (DPL < CPL)
                                         {
+                                                uint16_t oldcs = CS;
                                                 oaddr = addr;
                                                 /*Load new stack*/
                                                 oldss=SS;
@@ -1239,6 +1240,7 @@ void loadcscall(uint16_t seg, uint32_t old_pc)
                                                                 pclog("ABRT PUSHL\n");
                                                                 SS = oldss;
                                                                 ESP = oldsp2;
+                                                                CS = oldcs;
                                                                 return;
                                                         }
 //                                                        if (output) pclog("Stack now %04X:%08X\n",SS,ESP);
@@ -1253,6 +1255,7 @@ void loadcscall(uint16_t seg, uint32_t old_pc)
                                                                                 pclog("ABRT COPYL\n");
                                                                                 SS = oldss;
                                                                                 ESP = oldsp2;
+                                                                                CS = oldcs;
                                                                                 return;
                                                                         }
                                                                 }
@@ -1270,6 +1273,7 @@ void loadcscall(uint16_t seg, uint32_t old_pc)
                                                                 pclog("ABRT PUSHW\n");
                                                                 SS = oldss;
                                                                 ESP = oldsp2;
+                                                                CS = oldcs;
                                                                 return;
                                                         }
                                                         if (output) pclog("Write SP to %04X:%04X\n",SS,SP);
@@ -1288,6 +1292,7 @@ void loadcscall(uint16_t seg, uint32_t old_pc)
                                                                                 pclog("ABRT COPYW\n");
                                                                                 SS = oldss;
                                                                                 ESP = oldsp2;
+                                                                                CS = oldcs;
                                                                                 return;
                                                                         }
                                                                 }
@@ -2152,7 +2157,7 @@ void pmodeiret(int is32)
 //                        pclog("V86 IRET %04X:%08X\n",SS,ESP);
 //                        output=3;
                         
-                        cpu_state.pc=newpc;
+                        cpu_state.pc = newpc & 0xffff;
                         cpu_state.seg_cs.base=seg<<4;
                         cpu_state.seg_cs.limit=0xFFFF;
                         cpu_state.seg_cs.limit_low = 0;

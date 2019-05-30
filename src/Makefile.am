@@ -23,7 +23,7 @@ wx-resources.cpp : pc.xrc
 	-wxrc -c pc.xrc -o wx-resources.cpp
 
 # PCem
-pcem_SOURCES = 386.c 386_common.c 386_dynarec.c 386_dynarec_ops.c 808x.c acc2036.c acc2168.c acc3221.c acer386sx.c \
+pcem_SOURCES = 386.c 386_common.c 386_dynarec.c 386_dynarec_ops.c 808x.c 82091aa.c acc2036.c acc2168.c acc3221.c acer386sx.c \
 ali1429.c amstrad.c cassette.c cbm_io.c cdrom-image.cc cdrom-null.c cmd640.c codegen.c codegen_accumulate.c \
 codegen_allocator.c codegen_block.c codegen_ir.c codegen_ops.c codegen_ops_3dnow.c codegen_ops_arith.c \
 codegen_ops_branch.c codegen_ops_fpu_arith.c codegen_ops_fpu_constant.c codegen_ops_fpu_loadstore.c \
@@ -32,7 +32,7 @@ codegen_ops_mmx_logic.c codegen_ops_mmx_pack.c codegen_ops_mmx_shift.c codegen_o
 codegen_ops_logic.c codegen_ops_shift.c codegen_ops_misc.c codegen_ops_mov.c codegen_ops_stack.c codegen_reg.c \
 codegen_timing_486.c codegen_timing_686.c codegen_timing_common.c codegen_timing_k6.c codegen_timing_pentium.c \
 codegen_timing_winchip.c codegen_timing_winchip2.c compaq.c config.c cpu.c cpu_tables.c dells200.c device.c disc.c \
-disc_fdi.c disc_img.c disc_sector.c dma.c esdi_at.c fdc.c fdc37c665.c fdd.c fdi2raw.c gameport.c hdd.c hdd_esdi.c \
+disc_fdi.c disc_img.c disc_sector.c dma.c esdi_at.c fdc.c fdc37c665.c fdc37c93x.c fdd.c fdi2raw.c gameport.c hdd.c hdd_esdi.c \
 hdd_file.c headland.c i430lx.c i430fx.c i430hx.c i430vx.c ide.c ide_atapi.c ide_sff8038i.c intel.c intel_flash.c io.c \
 jim.c joystick_ch_flightstick_pro.c joystick_standard.c joystick_sw_pad.c joystick_tm_fcs.c keyboard.c \
 keyboard_amstrad.c keyboard_at.c keyboard_olim24.c keyboard_pcjr.c keyboard_xt.c laserxt.c lpt.c lpt_dac.c lpt_dss.c \

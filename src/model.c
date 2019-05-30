@@ -4,6 +4,7 @@
 #include "io.h"
 #include "mouse.h"
 
+#include "82091aa.h"
 #include "acc2036.h"
 #include "acc2168.h"
 #include "acc3221.h"
@@ -19,6 +20,7 @@
 #include "dma.h"
 #include "fdc.h"
 #include "fdc37c665.h"
+#include "fdc37c93x.h"
 #include "gameport.h"
 #include "headland.h"
 #include "i430fx.h"
@@ -209,10 +211,10 @@ MODEL models[] =
         {"[Socket 5] Intel Advanced/ZP",  ROM_ZAPPA,            "zappa",          { {"Intel", cpus_PentiumS5},   {"IDT", cpus_WinChip}, {"Cyrix", cpus_6x86}},   MODEL_GFX_NONE|MODEL_AT|MODEL_PCI|MODEL_PS2|MODEL_HAS_IDE,         1,  128,   1,       at_zappa_init, NULL},
         {"[Socket 5] Packard Bell PB570", ROM_PB570,            "pb570",          { {"Intel", cpus_PentiumS5},   {"IDT", cpus_WinChip}, {"Cyrix", cpus_6x86}},   MODEL_GFX_DISABLE_SW|MODEL_AT|MODEL_PCI|MODEL_PS2|MODEL_HAS_IDE,   1,  128,   1,       at_pb570_init, NULL},
 
-        {"[Socket 7] ASUS P/I-P55TVP4",   ROM_P55TVP4,          "p55tvp4",        { {"Intel", cpus_Pentium},     {"IDT", cpus_WinChip}, {"Cyrix", cpus_6x86}},   MODEL_GFX_NONE|MODEL_AT|MODEL_PCI|MODEL_PS2|MODEL_HAS_IDE,         1,  256,   1,      at_p55tvp4_init, NULL},
-        {"[Socket 7] ASUS P/I-P55T2P4",   ROM_P55T2P4,          "p55t2p4",        { {"Intel", cpus_Pentium},     {"IDT", cpus_WinChip}, {"Cyrix", cpus_6x86}},   MODEL_GFX_NONE|MODEL_AT|MODEL_PCI|MODEL_PS2|MODEL_HAS_IDE,         1,  512,   1,      at_p55t2p4_init, NULL},
-        {"[Socket 7] Award 430VX PCI",    ROM_430VX,            "430vx",          { {"Intel", cpus_Pentium},     {"IDT", cpus_WinChip}, {"Cyrix", cpus_6x86}},   MODEL_GFX_NONE|MODEL_AT|MODEL_PCI|MODEL_PS2|MODEL_HAS_IDE,         1,  256,   1,      at_i430vx_init, NULL},
-        {"[Socket 7] Epox P55-VA",        ROM_P55VA,            "p55va",          { {"Intel", cpus_Pentium},     {"IDT", cpus_WinChip}, {"Cyrix", cpus_6x86}},   MODEL_GFX_NONE|MODEL_AT|MODEL_PCI|MODEL_PS2|MODEL_HAS_IDE,         1,  256,   1,      at_p55va_init, NULL},
+        {"[Socket 7] ASUS P/I-P55TVP4",   ROM_P55TVP4,          "p55tvp4",        { {"Intel", cpus_Pentium},     {"AMD", cpus_K6_S7},   {"IDT", cpus_WinChip}, {"Cyrix", cpus_6x86}},   MODEL_GFX_NONE|MODEL_AT|MODEL_PCI|MODEL_PS2|MODEL_HAS_IDE,         8,  128,   1,      at_p55tvp4_init, NULL},
+        {"[Socket 7] ASUS P/I-P55T2P4",   ROM_P55T2P4,          "p55t2p4",        { {"Intel", cpus_Pentium},     {"AMD", cpus_K6_S7},   {"IDT", cpus_WinChip}, {"Cyrix", cpus_6x86}},   MODEL_GFX_NONE|MODEL_AT|MODEL_PCI|MODEL_PS2|MODEL_HAS_IDE,         8,  256,   1,      at_p55t2p4_init, NULL},
+        {"[Socket 7] Epox P55-VA",        ROM_P55VA,            "p55va",          { {"Intel", cpus_Pentium},     {"AMD", cpus_K6_S7},   {"IDT", cpus_WinChip}, {"Cyrix", cpus_6x86}},   MODEL_GFX_NONE|MODEL_AT|MODEL_PCI|MODEL_PS2|MODEL_HAS_IDE,         8,  128,   1,      at_p55va_init, NULL},
+        {"[Socket 7] Shuttle HOT-557",    ROM_430VX,            "430vx",          { {"Intel", cpus_Pentium},     {"AMD", cpus_K6_S7},   {"IDT", cpus_WinChip}, {"Cyrix", cpus_6x86}},   MODEL_GFX_NONE|MODEL_AT|MODEL_PCI|MODEL_PS2|MODEL_HAS_IDE,         8,  128,   1,      at_i430vx_init, NULL},
 
         {"[Super 7] FIC VA-503+",         ROM_FIC_VA503P,       "fic_va503p",     { {"Intel", cpus_Pentium},     {"AMD", cpus_K6_SS7},  {"IDT", cpus_WinChip_SS7}, {"Cyrix", cpus_6x86}},   MODEL_GFX_NONE|MODEL_AT|MODEL_PCI|MODEL_PS2|MODEL_HAS_IDE,     1,  512,   1,        at_mvp3_init, NULL},
         
@@ -660,6 +662,7 @@ void at_pb520r_init()
         i430lx_init();
         sio_init(2, 0xc, 0xe, 0x6, 0);
         cmd640b_init(1);
+        aip_82091aa_init(0x22);
         intel_batman_init();
         device_add(&intel_flash_bxt_ami_device);
 }
@@ -672,7 +675,7 @@ void at_endeavor_init()
         pci_slot(0xf);
         pci_slot(0x10);
         i430fx_init();
-        piix_init(7, 0xd, 0xe, 0xf, 0x10);
+        piix_init(7, 0xd, 0xe, 0xf, 0x10, i430fx_reset);
         pc87306_init(0x2e);
         intel_endeavor_init();
         device_add(&intel_flash_bxt_ami_device);
@@ -684,7 +687,7 @@ void at_pb570_init()
         pci_slot(0x11);
         pci_slot(0x13);
         i430fx_init();
-        piix_init(7, 0x11, 0x13, 0xb, 0x8);
+        piix_init(7, 0x11, 0x13, 0xb, 0x8, i430fx_reset);
         pc87306_init(0x2e);
         intel_endeavor_init();
         device_add(&intel_flash_bxt_ami_device);
@@ -698,7 +701,7 @@ void at_zappa_init()
         pci_slot(0xf);
         pci_slot(0x10);
         i430fx_init();
-        piix_init(7, 0xd, 0xf, 0xe, 0x10);
+        piix_init(7, 0xd, 0xf, 0xe, 0x10, i430fx_reset);
         pc87306_init(0x2e);
         intel_zappa_init();
         device_add(&intel_flash_bxt_ami_device);
@@ -713,8 +716,8 @@ void at_p55va_init()
         pci_slot(0x0A);
         pci_slot(0x0B);
         i430vx_init();
-        piix_init(7, 0x08, 0x09, 0x0A, 0x0B);
-        um8669f_init();
+        piix_init(7, 0x08, 0x09, 0x0A, 0x0B, i430vx_reset);
+        fdc37c932fr_init();
         device_add(&intel_flash_bxt_device);
 }
 
@@ -727,8 +730,8 @@ void at_p55tvp4_init()
         pci_slot(0x0A);
         pci_slot(0x09);
         i430vx_init();
-        piix_init(7, 0x0C, 0x0B, 0x0A, 0x09);
-        um8669f_init();
+        piix_init(7, 0x0C, 0x0B, 0x0A, 0x09, i430vx_reset);
+        w83877f_init(0x3f0, 0x87);
         device_add(&intel_flash_bxt_device);
 }
 
@@ -741,7 +744,7 @@ void at_i430vx_init()
         pci_slot(0x13);
         pci_slot(0x14);
         i430vx_init();
-        piix_init(7, 18, 17, 20, 19);
+        piix_init(7, 18, 17, 20, 19, i430vx_reset);
         um8669f_init();
         device_add(&intel_flash_bxt_device);
 }
@@ -755,8 +758,8 @@ void at_p55t2p4_init()
         pci_slot(0x0A);
         pci_slot(0x09);
         i430hx_init();
-        piix_init(7, 0x0C, 0x0B, 0x0A, 0x09);
-        um8669f_init();
+        piix_init(7, 0x0C, 0x0B, 0x0A, 0x09, i430hx_reset);
+        w83877f_init(0x3f0, 0x87);
         device_add(&intel_flash_bxt_device);
 }
 
@@ -769,7 +772,7 @@ void at_mvp3_init()
         pci_slot(10);
         mvp3_init();
         vt82c586b_init(7, 8, 9, 10, 0);
-        w83877tf_init();
+        w83877tf_init(0x250, 0x89);
         device_add(&sst_39sf010_device);
 }
 
