@@ -11,3 +11,5 @@ Warning: PCem has unicode commit author names which may affect git hashes, safer
 ----
 
 Working branch is `tasvideos`.
+
+It is advised to keep updates (when upstream is pulled) in separate branches, and patches on top of them.
